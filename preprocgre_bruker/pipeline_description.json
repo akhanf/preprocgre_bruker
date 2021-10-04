@@ -1,0 +1,15 @@
+{
+    "Name": "preprocgre_bruker - Workflow for pre-processing Bruker 9.4T GRE scans",
+    "BIDSVersion": "1.4.0",
+    "DatasetType": "derivative",
+    "GeneratedBy": [
+        {
+            "Name": "preprocgre_bruker",
+            "Version": "0.1.0",
+            "CodeURL": "http://github.com/akhanf/preprocgre_bruker",
+            "Author": "Ali Khan",
+            "AuthorEmail": "ali.khan@uwo.ca"
+ 
+        }
+    ]
+}

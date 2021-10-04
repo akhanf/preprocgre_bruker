@@ -1,0 +1,80 @@
+#---- begin snakebids boilerplate ----------------------------------------------
+
+import snakebids
+from snakebids import bids
+
+configfile: 'config/snakebids.yml'
+
+#writes inputs_config.yml and updates config dict
+config.update(
+    snakebids.generate_inputs(
+        bids_dir=config["bids_dir"],
+        pybids_inputs=config["pybids_inputs"],
+        derivatives=config["derivatives"],
+        participant_label=config["participant_label"],
+        exclude_participant_label=config["exclude_participant_label"]
+    )
+)
+
+
+
+#this adds constraints to the bids naming
+wildcard_constraints:  **snakebids.get_wildcard_constraints(\
+    config["pybids_inputs"]\
+)
+
+#---- end snakebids boilerplate ------------------------------------------------
+
+
+#get the parsed inputs and print them for convenience
+
+input_path = config['input_path']
+input_wildcards = config['input_wildcards']
+input_lists = config['input_lists']
+input_zip_lists = config['input_zip_lists']
+
+subjects = config['subjects']
+subj_wildcards = config['subj_wildcards']
+
+print(f'input_path: {input_path}')
+print(f'input_wildcards: {input_wildcards}')
+print(f'input_lists: {input_lists}')
+print(f'input_zip_lists: {input_zip_lists}')
+print(f'subj_wildcards: {subj_wildcards}')
+
+
+# below is the actual workflow
+
+# want to average multiple runs of the same image together
+# so, output should have these wildcards: subject, part, echo
+#   ie all the wildcards *except*: run
+
+
+
+rule all:
+    input:
+        avg_image = expand(
+                        bids(
+                            root='results',
+                            suffix='GRE.nii.gz',
+                            desc='avgRuns',
+                            part='{part}',
+                            echo='{echo}',
+                            **subj_wildcards),
+                        subject = subjects,
+                        part = input_lists['gre']['part'],
+                        echo = input_lists['gre']['echo'])
+
+rule avg_runs:
+    input:
+        in_images =  expand(input_path['gre'],
+                            part='{part}',
+                            echo='{echo}',
+                            **subj_wildcards,
+                            run=input_lists['gre']['run'], #integrate over all runs
+                            allow_missing=True)
+    output:
+        avg_image = bids(root='results',suffix='GRE.nii.gz',desc='avgRuns',part='{part}',echo='{echo}',**subj_wildcards)
+    shell: 'c3d {input} -mean {output.avg_image}'
+
+
