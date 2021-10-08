@@ -62,10 +62,12 @@ rule all:
                             echo='{echo}',
                             **subj_wildcards),
                         subject = subjects,
-                        part = input_lists['gre']['part'],
+                        part = ['phase','mag'],
                         echo = input_lists['gre']['echo'])
 
-rule avg_runs:
+
+
+rule average_runs:
     input:
         in_images =  expand(input_path['gre'],
                             part='{part}',
@@ -74,7 +76,36 @@ rule avg_runs:
                             run=input_lists['gre']['run'], #integrate over all runs
                             allow_missing=True)
     output:
-        avg_image = bids(root='results',suffix='GRE.nii.gz',desc='avgRuns',part='{part}',echo='{echo}',**subj_wildcards)
+        avg_image = bids(root='results',suffix='GRE.nii.gz',desc='avgRuns',part='{part,real|imag|mag}',echo='{echo}',**subj_wildcards)
     shell: 'c3d {input} -mean {output.avg_image}'
 
 
+rule copy_json_to_avg:
+    input:
+        json =  expand(input_path['gre'][:-6]+'json',
+                            part='{part}',
+                            echo='{echo}',
+                            **subj_wildcards,
+                            run=input_lists['gre']['run'][0], #get first run
+                            allow_missing=True)
+    output:
+        json = bids(root='results',suffix='GRE.json',desc='avgRuns',part='{part,real|imag|mag}',echo='{echo}',**subj_wildcards)
+    shell: 'cp {input} {output}'
+
+
+
+rule gen_phase:
+    """ generates a Siemens-friendly phase image from the real/imaginary data"""
+    input:
+        imag_nii = bids(root='results',suffix='GRE.nii.gz',desc='avgRuns',part='imag',echo='{echo}',**subj_wildcards),
+        real_nii = bids(root='results',suffix='GRE.nii.gz',desc='avgRuns',part='real',echo='{echo}',**subj_wildcards),
+        imag_json = bids(root='results',suffix='GRE.json',desc='avgRuns',part='imag',echo='{echo}',**subj_wildcards)
+    output:
+        phase_nii = bids(root='results',suffix='GRE.nii.gz',desc='avgRuns',part='phase',echo='{echo}',**subj_wildcards),
+        phase_json = bids(root='results',suffix='GRE.json',desc='avgRuns',part='phase',echo='{echo}',**subj_wildcards)
+    script: 'scripts/gen_phase.py'
+
+
+
+
+        

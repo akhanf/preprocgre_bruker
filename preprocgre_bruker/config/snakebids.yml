@@ -26,10 +26,11 @@ pybids_inputs:
     filters:
       suffix: 'GRE'
       extension: '.nii.gz'
-      part: 
-        - 'real'
-        - 'imag'
       datatype: 'anat'
+      part:
+        - real
+        - imag
+        - mag
     wildcards:
       - subject
       - session
